@@ -70,6 +70,14 @@ let rec deadcode C = (* Remove all code until next label *)
     | Label lab :: _  -> C
     | _         :: C1 -> deadcode C1
 
+let rec addIFZERO lab3 C =
+  match C with
+  | _ -> _
+
+and addIFNZRO lab3 C =
+  match C with
+  | _ -> _
+
 let addNOT C =
     match C with
     | NOT        :: C1 -> C1
