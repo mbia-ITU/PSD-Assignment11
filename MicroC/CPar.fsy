@@ -131,9 +131,12 @@ ExprNotAccess:
   | Expr LT    Expr                     { Prim2("<",  $1, $3) }
   | Expr GE    Expr                     { Prim2(">=", $1, $3) }
   | Expr LE    Expr                     { Prim2("<=", $1, $3) }
-  | Expr SEQAND Expr                    { Andalso($1, $3)     }
-  | Expr SEQOR  Expr                    { Orelse($1, $3)      }
+  | Expr SEQAND Expr                    { Cond($1, $3, 0)     } 
+  | Expr SEQOR  Expr                    { Cond($1, 1, $3)      }
 ;
+
+
+a && b = (a ? b : 0) = Cond(a,b,0)
 
 AtExprNotAccess:
     Const                               { CstI $1             }
