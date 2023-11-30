@@ -199,7 +199,7 @@ let rec cStmt stmt (varEnv : varEnv) (funEnv : funEnv) (C : instr list) : instr 
       let (jumpend, C1) = makeJump C
       let (labelse, C2) = addLabel (cStmt stmt2 varEnv funEnv C1)
       cExpr e varEnv funEnv (addIFZERO labelse 
-       :: cStmt stmt1 varEnv funEnv (addJump jumpend C2))
+       (cExpr e2 varEnv funEnv (addIFNZERO labthen C2)))
     | While(e, body) ->
       let labbegin = newLabel()
       let (jumptest, C1) = 
@@ -293,22 +293,22 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (C : instr list) : inst
         let (labfalse, C2) = addLabel (addCST 0 C1)
         cExpr e1 varEnv funEnv
           (addIFZERO labfalse 
-             :: cExpr e2 varEnv funEnv (addJump jumpend C2))
+             (cExpr e2 varEnv funEnv (addJump jumpend C2)))
     | Orelse(e1, e2) -> 
       match C with
       | IFNZRO lab :: _ -> 
-        cExpr e1 varEnv funEnv (addIFNZERO lab :: cExpr e2 varEnv funEnv C)
+        cExpr e1 varEnv funEnv (addIFNZERO lab (cExpr e2 varEnv funEnv C))
       | IFZERO labthen :: C1 ->
         let(labelse, C2) = addLabel C1
         cExpr e1 varEnv funEnv
-           (addIFNZERO labelse :: cExpr e2 varEnv funEnv
-             (addIFZERO labthen :: C2))
+           (addIFNZERO labelse (cExpr e2 varEnv funEnv
+             (addIFZERO labthen C2)))
       | _ ->
         let (jumpend, C1) = makeJump C
         let (labtrue, C2) = addLabel(addCST 1 C1)
         cExpr e1 varEnv funEnv
            (addIFNZERO labtrue 
-             :: cExpr e2 varEnv funEnv (addJump jumpend C2))
+             (cExpr e2 varEnv funEnv (addJump jumpend C2)))
     | Call(f, es) -> callfun f es varEnv funEnv C
 
 (* Generate code to access variable, dereference pointer or index array: *)
