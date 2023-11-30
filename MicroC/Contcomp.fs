@@ -199,14 +199,14 @@ let rec cStmt stmt (varEnv : varEnv) (funEnv : funEnv) (C : instr list) : instr 
       let (jumpend, C1) = makeJump C
       let (labelse, C2) = addLabel (cStmt stmt2 varEnv funEnv C1)
       cExpr e varEnv funEnv (addIFZERO labelse 
-       (cExpr e2 varEnv funEnv (addIFNZERO labthen C2)))
+       (cStmt stmt1 varEnv funEnv (addJump jumpend C2)))
     | While(e, body) ->
       let labbegin = newLabel()
       let (jumptest, C1) = 
-           makeJump (cExpr e varEnv funEnv (addIFNZERO labbegin :: C))
+           makeJump (cExpr e varEnv funEnv (addIFNZERO labbegin C))
       addJump jumptest (Label labbegin :: cStmt body varEnv funEnv C1)
     | Expr e -> 
-      cExpr e varEnv funEnv (addINCSP -1 C) (* Remove result of expression from stack, as this is a statement *)
+      cExpr e varEnv funEnv (addINCSP -1 C) 
     | Block stmts -> 
       let rec pass1 stmts ((_, fdepth) as varEnv) =
           match stmts with 
@@ -221,7 +221,7 @@ let rec cStmt stmt (varEnv : varEnv) (funEnv : funEnv) (C : instr list) : instr 
           | [] -> C
           | (BDec code,  varEnv) :: sr -> code @ pass2 sr C
           | (BStmt stmt, varEnv) :: sr -> cStmt stmt varEnv funEnv (pass2 sr C)
-      pass2 stmtsback (addINCSP(snd varEnv - fdepthend) C) (* Remove variables, declared in the block, from the stack *)
+      pass2 stmtsback (addINCSP(snd varEnv - fdepthend) C)
     | Return None -> 
       RET (snd varEnv - 1) :: deadcode C
     | Return (Some e) -> 
