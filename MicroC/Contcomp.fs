@@ -112,6 +112,13 @@ let rec addCST i C =
     | (_, IFZERO lab :: C1) -> C1
     | (0, IFNZRO lab :: C1) -> C1
     | (_, IFNZRO lab :: C1) -> addGOTO lab C1
+    | (x, CSTI y :: EQ :: C1) -> addCST (if x = y then 1 else 0) C1 
+    | (x, CSTI y :: NOT :: EQ :: C1) -> addCST (if x <> y then 1 else 0) C1
+    | (x, CSTI y :: LT :: C1) -> addCST (if x < y then 1 else 0) C1
+    | (x, CSTI y :: SWAP :: LT :: C1) -> addCST (if x > y then 1 else 0) C1 
+    | (x, CSTI y :: LT :: C1) -> addCST (if x < y then 1 else 0) C1
+    | (x, CSTI y :: SWAP :: NOT :: LT :: C1) -> addCST (if x <= y then 1 else 0) C1
+    | (x, CSTI y :: NOT :: LT :: C1) -> addCST (if x >= y then 1 else 0) C1
     | _                     -> CSTI i :: C
             
 (* ------------------------------------------------------------------- *)
@@ -158,6 +165,8 @@ let allocate (kind : int -> var) (typ, x) (varEnv : varEnv) : varEnv * instr lis
       (newEnv, code)
 
 (* Bind declared parameter in env: *)
+
+
 
 let bindParam (env, fdepth) (typ, x) : varEnv = 
     ((x, (Locvar fdepth, typ)) :: env, fdepth+1);
@@ -310,6 +319,14 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (C : instr list) : inst
            (addIFNZERO labtrue 
              (cExpr e2 varEnv funEnv (addJump jumpend C2)))
     | Call(f, es) -> callfun f es varEnv funEnv C
+    | Cont (e1, e2, e3) -> 
+        let (jumpend, C1) = makeJump C
+        let (l1, C2) = cExpr e3 varEnv funEnv C1 
+                      |> addLabel Addjump jumpend C2
+                      |> cExpr e2 varEnv funEnv 
+                      |> addIFZERO l1
+                      |> cExpr e1 varEnv funEnv
+    
 
 (* Generate code to access variable, dereference pointer or index array: *)
 
