@@ -282,12 +282,12 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (C : instr list) : inst
     | Andalso(e1, e2) ->
       match C with
       | IFZERO lab :: _ ->
-         cExpr e1 varEnv funEnv (addIFZERO lab :: cExpr e2 varEnv funEnv C)
+         cExpr e1 varEnv funEnv (addIFZERO lab (cExpr e2 varEnv funEnv C))
       | IFNZRO labthen :: C1 -> 
         let (labelse, C2) = addLabel C1
         cExpr e1 varEnv funEnv
            (IFZERO labelse 
-              :: cExpr e2 varEnv funEnv (addIFNZERO labthen :: C2))
+              :: cExpr e2 varEnv funEnv (addIFNZERO labthen C2))
       | _ ->
         let (jumpend,  C1) = makeJump C
         let (labfalse, C2) = addLabel (addCST 0 C1)
